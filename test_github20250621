@@ -1,1 +1,41 @@
 test
+
+import json
+import boto3
+import uuid
+
+# DynamoDB 初期化
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table("training-users")
+
+def lambda_handler(event, context):
+    try:
+        body = json.loads(event['body'])
+        name = body.get("name", "名無しのユーザー")  # デフォルト付きでも安心！
+
+        # UUID で一意のIDを作成
+        user_id = str(uuid.uuid4())
+
+        # DynamoDB に登録
+        table.put_item(
+            Item={
+                "userId": user_id,
+                "name": name
+            }
+        )
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({"userId": user_id, "name": name}, ensure_ascii=False)
+        }
+
+    except Exception as e:
+        print(f"エラー発生: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({"message": f"登録失敗: {str(e)}"})
+        }
